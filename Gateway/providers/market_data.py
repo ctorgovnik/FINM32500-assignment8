@@ -3,7 +3,7 @@ import csv
 from Gateway.providers.provider import Provider
 from Gateway.serializers import MessageSerializer
 
-class MarketData(Provider):
+class MarketDataProvider(Provider):
 
     def __init__(self, data_path: str):
         self.data_path = data_path

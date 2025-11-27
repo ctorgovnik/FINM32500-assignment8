@@ -3,9 +3,9 @@ import os
 import pytest
 import tempfile
 import csv
+
 from Gateway.providers.provider import Provider
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 @pytest.fixture
 def sample_csv():
@@ -36,4 +36,3 @@ def mock_provider():
 @pytest.fixture
 def empty_mock_provider():
     return MockProvider([])
-

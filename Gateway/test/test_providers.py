@@ -1,10 +1,10 @@
 import pytest
 
-from Gateway.providers.market_data import MarketData
+from Gateway.providers.market_data import MarketDataProvider
 from Gateway.providers.news import NewsProvider
 
 def test_market_data_provider_reads_csv(sample_csv):
-    provider = MarketData(sample_csv)
+    provider = MarketDataProvider(sample_csv)
     data1 = provider.get_next_data()
     assert b"AAPL,169.89*" in data1 or data1 == b"AAPL,169.89*"
     
@@ -16,7 +16,7 @@ def test_market_data_provider_reads_csv(sample_csv):
     assert data3 is None
 
 def test_market_data_provider_exhausts(sample_csv):
-    provider = MarketData(sample_csv)
+    provider = MarketDataProvider(sample_csv)
     data1 = provider.get_next_data()
     assert b"AAPL" in data1
     data2 = provider.get_next_data()

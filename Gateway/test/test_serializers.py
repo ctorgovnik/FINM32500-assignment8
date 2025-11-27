@@ -1,4 +1,5 @@
 import pytest
+
 from Gateway.serializers import MessageSerializer
 
 def test_serialize_price():
@@ -20,4 +21,3 @@ def test_serialize_price_with_delimiter():
     serializer = MessageSerializer()
     result = serializer.serialize_price_with_delimiter("MSFT", "325.20")
     assert result == b"MSFT,325.20*"
-

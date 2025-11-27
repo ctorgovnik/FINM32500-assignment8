@@ -1,6 +1,8 @@
 import pytest
 import socket
+
 from unittest.mock import Mock, MagicMock
+
 from Gateway.stream import Stream
 
 def test_stream_broadcast_single_client(mock_provider):
@@ -43,4 +45,3 @@ def test_stream_removes_dead_clients(mock_provider):
     assert len(stream.clients) == 1
     assert good_socket in stream.clients
     assert bad_socket not in stream.clients
-
