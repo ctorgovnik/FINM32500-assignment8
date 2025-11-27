@@ -1,0 +1,11 @@
+{
+    "Gateway": {
+        "md_port": 8000,
+        "news_port": 8001,
+        "delimiter": "*",
+        "data_path": "data/market_data-1.csv"
+    },
+    "OrderBook": {},
+    "Strategy": {},
+    "OrderManager": {}
+}
