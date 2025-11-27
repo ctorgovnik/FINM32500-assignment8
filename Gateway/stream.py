@@ -2,7 +2,7 @@ import socket
 from typing import List
 import threading
 
-from providers.provider import Provider
+from Gateway.providers.provider import Provider
 
 class Stream:
     def __init__(self, provider: Provider, port: int, delimiter: bytes = b'*'):

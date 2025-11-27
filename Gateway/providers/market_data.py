@@ -1,7 +1,7 @@
 import csv
 
-from providers.provider import Provider
-from serializers import MessageSerializer
+from Gateway.providers.provider import Provider
+from Gateway.serializers import MessageSerializer
 
 class MarketData(Provider):
 

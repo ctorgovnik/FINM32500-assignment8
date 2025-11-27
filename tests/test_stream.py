@@ -1,7 +1,7 @@
 import pytest
 import socket
 from unittest.mock import Mock, MagicMock
-from stream import Stream
+from Gateway.stream import Stream
 
 def test_stream_broadcast_single_client(mock_provider):
     stream = Stream(mock_provider, 0, delimiter=b'*')

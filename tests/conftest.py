@@ -3,7 +3,7 @@ import os
 import pytest
 import tempfile
 import csv
-from providers.provider import Provider
+from Gateway.providers.provider import Provider
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

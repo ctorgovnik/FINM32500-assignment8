@@ -2,7 +2,7 @@ import random
 from typing import Optional
 
 from Gateway.providers.provider import Provider
-from test.serializers import MessageSerializer
+from Gateway.serializers import MessageSerializer
 
 class NewsProvider(Provider):
     def __init__(self, num_sentiments: Optional[int] = None):

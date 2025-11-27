@@ -1,7 +1,7 @@
 import pytest
 
-from providers.market_data import MarketData
-from providers.news import NewsProvider
+from Gateway.providers.market_data import MarketData
+from Gateway.providers.news import NewsProvider
 
 def test_market_data_provider_reads_csv(sample_csv):
     provider = MarketData(sample_csv)

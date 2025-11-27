@@ -1,5 +1,5 @@
 import pytest
-from serializers import MessageSerializer
+from Gateway.serializers import MessageSerializer
 
 def test_serialize_price():
     serializer = MessageSerializer()
