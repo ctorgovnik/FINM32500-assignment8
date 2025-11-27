@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from trading_lib.strategy.strategy import MovingAverageStrategy
+from trading_lib.strategy.price_based_strategy import MovingAverageStrategy
 from trading_lib.models import Action, MarketDataPoint
 
 
