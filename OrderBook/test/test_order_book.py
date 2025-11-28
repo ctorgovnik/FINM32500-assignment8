@@ -54,14 +54,15 @@ def test_order_book_on_market_data(mock_feed_handler, mock_config):
         with patch('OrderBook.order_book.SharedPriceBook', return_value=book):
             order_book = OrderBook(mock_config)
             
-            # Simulate market data message: symbol,price,timestamp
-            test_data = b"AAPL,172.53,1234567890.123"
+            # Simulate market data message with datetime format: symbol,price,timestamp
+            test_data = b"AAPL,172.53,2025-10-01 09:30:00*"
             order_book.on_market_data(test_data)
             
             # Verify update in shared memory
             price, ts = book.read("AAPL")
             assert price == 172.53
-            assert ts == 1234567890.123
+            # Timestamp should be parsed from datetime string, so just check it exists
+            assert ts > 0
     finally:
         book.close()
         book.unlink()

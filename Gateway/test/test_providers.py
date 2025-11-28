@@ -11,9 +11,10 @@ def test_market_data_provider_reads_csv(sample_csv):
     data2 = provider.get_next_data()
     assert b"MSFT,320.22,2025-10-01 09:30:01*" in data2 or data2 == b"MSFT,320.22,2025-10-01 09:30:01*"
     
-    # After exhausting the CSV, should return None
+    # Provider now loops infinitely, so it should keep returning data
     data3 = provider.get_next_data()
-    assert data3 is None
+    assert data3 is not None
+    assert b"AAPL" in data3 or b"MSFT" in data3  # Should loop back to start
 
 def test_market_data_provider_exhausts(sample_csv):
     provider = MarketDataProvider(sample_csv)
@@ -21,9 +22,10 @@ def test_market_data_provider_exhausts(sample_csv):
     assert b"AAPL" in data1
     data2 = provider.get_next_data()
     assert b"MSFT" in data2
-    # After reading all rows, generator should be exhausted
+    # Provider loops, so should restart from beginning
     data3 = provider.get_next_data()
-    assert data3 is None
+    assert data3 is not None
+    assert b"AAPL" in data3  # Should loop back to AAPL
 
 def test_news_provider_generates_sentiment():
     provider = NewsProvider()
