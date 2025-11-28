@@ -4,6 +4,8 @@ import time
 from OrderManager.server import Server
 from OrderManager.client import OrderManagerClient
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def server():
