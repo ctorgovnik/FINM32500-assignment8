@@ -9,11 +9,11 @@ class NewsBasedStrategy:
     def __init__(self, threshold : int = 50):
         self.threshold = threshold
 
-    def generate_signal(self, news_sentiment: int) -> Action:
+    def generate_signal(self, ticker: str, news_sentiment: int) -> tuple[str, Action]:
         if news_sentiment > self.threshold:
-            return Action.BUY
+            return ticker, Action.BUY
         elif news_sentiment < self.threshold:
-            return Action.SELL
+            return ticker, Action.SELL
         else:
-            return Action.HOLD
+            return ticker, Action.HOLD
 
