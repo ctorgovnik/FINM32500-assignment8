@@ -28,12 +28,25 @@ class FeedHandler:
     
     def listen(self, socket: socket.socket):
         feed_type = self.socket_to_feed_type[socket]
+        buffer = b''  # Buffer for partial messages
+        delimiter = b'*'
+        
         while True:
-            data = socket.recv(1024)
-            if data:
-                for subscriber in self.subscribers[feed_type]:
-                    subscriber(data)
-            else:
+            try:
+                chunk = socket.recv(1024)
+                if not chunk:
+                    break
+                
+                buffer += chunk
+                
+                # Split by delimiter and process complete messages
+                while delimiter in buffer:
+                    message, buffer = buffer.split(delimiter, 1)
+                    if message:  # Skip empty messages
+                        # Add delimiter back for parsing
+                        for subscriber in self.subscribers[feed_type]:
+                            subscriber(message + delimiter)
+            except Exception as e:
                 break
     
     def disconnect(self, socket: socket.socket):

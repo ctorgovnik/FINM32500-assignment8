@@ -11,14 +11,15 @@ class MarketDataProvider(Provider):
         self._generator = self._read_csv()
 
     def _read_csv(self):
-        with open(self.data_path, 'r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                yield self.serializer.serialize_price_with_delimiter(
-                        row['symbol'], 
-                        row['price'],
-                        row['timestamp']
-                    )
+        while True:
+            with open(self.data_path, 'r') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    yield self.serializer.serialize_price_with_delimiter(
+                            row['symbol'], 
+                            row['price'],
+                            row['timestamp']
+                        )
 
     def get_next_data(self):
         try:

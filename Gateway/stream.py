@@ -92,6 +92,8 @@ class Stream:
                     self.shutdown_event.wait(0.1)
                     continue
                 self.broadcast(data)
+                # Throttle data rate to avoid overwhelming clients
+                time.sleep(0.01)  # 10ms delay between broadcasts
         except KeyboardInterrupt:
             self.logger.info(f"Received KeyboardInterrupt on port {self.port}, shutting down...")
         except Exception as e:

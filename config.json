@@ -1,11 +1,37 @@
 {
+    "symbols": ["AAPL", "MSFT", "SPY"],
+    
     "Gateway": {
+        "host": "localhost",
         "md_port": 8000,
         "news_port": 8001,
         "delimiter": "*",
         "data_path": "data/market_data-1.csv"
     },
-    "OrderBook": {},
-    "Strategy": {},
-    "OrderManager": {}
+    
+    "OrderBook": {
+        "host": "localhost",
+        "md_port": 8000,
+        "news_port": 8001,
+        "symbols": ["AAPL", "MSFT", "SPY"],
+        "shared_memory_name": "market_prices"
+    },
+    
+    "Strategy": {
+        "host": "localhost",
+        "news_port": 8001,
+        "symbols": ["AAPL", "MSFT", "SPY"],
+        "shared_memory_name": "market_prices",
+        "order_manager_host": "localhost",
+        "order_manager_port": 9000,
+        "short_window": 5,
+        "long_window": 20,
+        "bullish_threshold": 60,
+        "bearish_threshold": 40
+    },
+    
+    "OrderManager": {
+        "host": "localhost",
+        "port": 9000
+    }
 }
