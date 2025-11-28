@@ -6,10 +6,10 @@ from Gateway.providers.news import NewsProvider
 def test_market_data_provider_reads_csv(sample_csv):
     provider = MarketDataProvider(sample_csv)
     data1 = provider.get_next_data()
-    assert b"AAPL,169.89*" in data1 or data1 == b"AAPL,169.89*"
+    assert b"AAPL,169.89,2025-10-01 09:30:00*" in data1 or data1 == b"AAPL,169.89,2025-10-01 09:30:00*"
     
     data2 = provider.get_next_data()
-    assert b"MSFT,320.22*" in data2 or data2 == b"MSFT,320.22*"
+    assert b"MSFT,320.22,2025-10-01 09:30:01*" in data2 or data2 == b"MSFT,320.22,2025-10-01 09:30:01*"
     
     # After exhausting the CSV, should return None
     data3 = provider.get_next_data()

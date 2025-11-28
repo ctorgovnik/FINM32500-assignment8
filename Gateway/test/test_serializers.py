@@ -4,8 +4,8 @@ from Gateway.serializers import MessageSerializer
 
 def test_serialize_price():
     serializer = MessageSerializer()
-    result = serializer.serialize_price("AAPL", "172.53")
-    assert result == b"AAPL,172.53"
+    result = serializer.serialize_price("AAPL", "172.53", "2025-10-01 09:30:00")
+    assert result == b"AAPL,172.53,2025-10-01 09:30:00"
 
 def test_serialize_sentiment():
     serializer = MessageSerializer()
@@ -19,5 +19,5 @@ def test_add_delimiter():
 
 def test_serialize_price_with_delimiter():
     serializer = MessageSerializer()
-    result = serializer.serialize_price_with_delimiter("MSFT", "325.20")
-    assert result == b"MSFT,325.20*"
+    result = serializer.serialize_price_with_delimiter("MSFT", "325.20", "2025-10-01 09:30:00")
+    assert result == b"MSFT,325.20,2025-10-01 09:30:00*"

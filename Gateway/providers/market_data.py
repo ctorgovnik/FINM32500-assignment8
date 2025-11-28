@@ -16,7 +16,8 @@ class MarketDataProvider(Provider):
             for row in reader:
                 yield self.serializer.serialize_price_with_delimiter(
                         row['symbol'], 
-                        row['price']
+                        row['price'],
+                        row['timestamp']
                     )
 
     def get_next_data(self):
