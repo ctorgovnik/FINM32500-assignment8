@@ -7,6 +7,7 @@ from trading_lib.models import MarketDataPoint, Action
 class MovingAverageStrategy(Strategy):
     """
     Buys if 20-day MA > 50-day MA
+    Sells if 20-day MA < 50-day MA
     """
 
     def __init__(self, short_window: int = 20, long_window: int = 50, quantity: int = 100):
@@ -17,7 +18,7 @@ class MovingAverageStrategy(Strategy):
         # track previous MA relationship to catch true crossovers
         self._prev_short_gt_long: typing.Dict[str, bool] = {}
 
-    def generate_signals(self, tick: MarketDataPoint) -> list[tuple]:
+    def generate_signals(self, tick: MarketDataPoint) -> list[tuple[str, float, int, Action]]:
         sym, price = tick.symbol, tick.price
 
         if sym not in self._prices:
@@ -42,6 +43,8 @@ class MovingAverageStrategy(Strategy):
         # trigger only on transition from False -> True (crossover up)
         if (not prev_state) and curr_state:
             signals.append((sym, self.quantity, price, Action.BUY))
+        if prev_state and (not curr_state):
+            signals.append((sym, self.quantity, price, Action.SELL))
 
         self._prev_short_gt_long[sym] = curr_state
 
