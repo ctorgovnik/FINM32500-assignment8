@@ -8,8 +8,10 @@ class Server:
     def __init__(self, config: dict):
         self.logger = setup_logger("order_manager_server")
         self.host = config["host"]
-        self.port = config["port"]
+        self.port = config["order_manager_port"]
         self.running = True
+
+        self.logger.info(f"Server attempting to listen on {self.host}:{self.port}")
 
         # Create server socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

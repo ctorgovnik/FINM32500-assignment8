@@ -36,11 +36,11 @@ def run_order_manager(config: dict):
 if __name__ == "__main__":
     config = {
         "host": "localhost",
-        "port": 9000
+        "order_manager_port": 8500
     }
     
     print(f"OrderManager Server")
-    print(f"Listening on {config['host']}:{config['port']}")
+    print(f"Listening on {config['host']}:{config['order_manager_port']}")
     print("Press Ctrl+C to stop\n")
     
     run_order_manager(config)
