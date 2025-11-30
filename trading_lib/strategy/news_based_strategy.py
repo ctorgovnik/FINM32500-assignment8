@@ -6,13 +6,14 @@ class NewsBasedStrategy:
        returns buy,sell. or no signal based on sentiment
     """
 
-    def __init__(self, threshold : int = 50):
-        self.threshold = threshold
+    def __init__(self, bearish_threshold : int = 40, bullish_threshold : int = 60):
+        self.bearish_threshold = bearish_threshold
+        self.bullish_threshold = bullish_threshold
 
     def generate_signal(self, ticker: str, news_sentiment: int) -> tuple[str, Action]:
-        if news_sentiment > self.threshold:
+        if news_sentiment > self.bullish_threshold:
             return ticker, Action.BUY
-        elif news_sentiment < self.threshold:
+        elif news_sentiment < self.bearish_threshold:
             return ticker, Action.SELL
         else:
             return ticker, Action.HOLD

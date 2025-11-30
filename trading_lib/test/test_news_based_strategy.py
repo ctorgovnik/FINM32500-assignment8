@@ -10,7 +10,7 @@ class TestNewsBasedStrategy(unittest.TestCase):
         self.assertEqual(strategy.generate_signal("APPL",50),  ("APPL", Action.HOLD))
 
     def test_custom_threshold(self):
-        strategy = NewsBasedStrategy(threshold = 10)
+        strategy = NewsBasedStrategy(bearish_threshold=9, bullish_threshold=14)
         self.assertEqual(strategy.generate_signal("APPL", 4),  ("APPL", Action.SELL))
         self.assertEqual(strategy.generate_signal("APPL", 10), ("APPL", Action.HOLD))
         self.assertEqual(strategy.generate_signal("APPL", 15), ("APPL", Action.BUY))

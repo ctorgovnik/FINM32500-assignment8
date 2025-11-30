@@ -248,7 +248,7 @@ Logs are written to `logs/` directory:
   - [x] Moving average crossover logic
   - [x] News-based signal logic
   - [x] Combined signal logic
-  - [ ] Order generation
+  - [x] Order generation
 - [ ] Performance benchmarking
 - [ ] Additional unit tests
 - [ ] Performance report
