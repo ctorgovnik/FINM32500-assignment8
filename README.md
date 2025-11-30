@@ -224,8 +224,8 @@ Demonstrates:
 - **Delimiter:** `*`
 
 ### News Protocol
-- **Format:** `SENTIMENT*`
-- **Example:** `75*`
+- **Format:** `SYMBOL, SENTIMENT*`
+- **Example:** `APPL,75*`
 - **Range:** 0-100 (0=bearish, 100=bullish)
 
 ### Order Protocol
