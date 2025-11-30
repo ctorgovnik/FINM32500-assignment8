@@ -71,6 +71,7 @@ class OrderBook:
             self.update_count += 1
             if self.update_count % 50 == 0:
                 self.logger.info(f"Processed {self.update_count} updates (latest: {symbol} @ ${price:.2f})")
+                self.logger.info(f"Processed {self.update_count} updates (latest: {symbol} @ ${price:.2f})")
         except Exception as e:
             self.logger.error(f"Unexpected error processing market data: {e}")
     

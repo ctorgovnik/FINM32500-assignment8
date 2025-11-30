@@ -4,14 +4,15 @@ from trading_lib.models import Action, MarketDataPoint, Order
 from trading_lib.strategy.base import Strategy
 from OrderBook.feed_handler import FeedHandler
 from logger import setup_logger
-
+from OrderManager.client import OrderManagerClient
+from trading_lib.models import Action
 from typing import Optional, Callable
 
 class StrategyCombiner:
     def __init__(self, price_strategy: MovingAverageStrategy, news_strategy: NewsBasedStrategy, config=None):
         self.price_strategy = price_strategy
         self.news_strategy = news_strategy
-        self._latest_price_signal: dict[str, tuple[float, int, Action]] = {}
+        self._latest_price_signal: dict[str, tuple[int, float, Action]] = {}
         self._latest_news_signal: dict[str, Action] = {}
         self._trade_signal_listener = None
 
@@ -20,8 +21,17 @@ class StrategyCombiner:
         if config is not None:
             self.feed_handler = FeedHandler(config["host"], config["md_port"], config["news_port"])
             self.feed_handler.subscribe(self.news_listener, "news_listener")
-            # TODO: Configure OrderManagerClient
-            # TODO: add trade_signal_listener which calls placeorder on client
+            self.client = OrderManagerClient(config["host"], config["order_manager_port"])
+            self.client.connect()
+            self.set_trade_signal_listener(self._default_trade_signal_listener)
+
+    def _default_trade_signal_listener(self, symbol: str, quantity: int, price: float, action: Action):
+        """ Default callback to send order to OrderManagerClient"""
+        try:
+            self.client.place_order(symbol, action, quantity, price)
+            self.logger.info(f"Placed order via client: symbol = {symbol}, quantity = {quantity}, price = {price}, action = {action}")
+        except Exception as e:
+            self.logger.error(f"Failed to place order for {symbol}: {e}")
 
     def shutdown(self):
         self.feed_handler.shutdown()
@@ -77,8 +87,8 @@ class StrategyCombiner:
         if len(signals) == 0:
             return
 
-        ticker, price, quantity, action = signals[0]
-        self._latest_price_signal[ticker] = (price, quantity, action)
+        ticker, quantity, price, action = signals[0]
+        self._latest_price_signal[ticker] = (quantity, price, action)
 
         self.generate_trade_signal(ticker)
 
@@ -97,9 +107,3 @@ class StrategyCombiner:
             self._trade_signal_listener(ticker, quantity, price, price_action)
 
         return
-
-
-
-
-
-

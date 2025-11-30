@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 import pytest
 
 from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
@@ -114,3 +115,89 @@ def test_sell_price_buy_news(generate_sell_ticks):
     strategy_combiner.got_new_news("AAPL", 75)
 
     assert not callback_got_called
+
+def test_init_with_config_creates_client_and_connects(monkeypatch):
+    fake_client_cls = MagicMock()
+    fake_client_instance = MagicMock()
+    fake_client_cls.return_value = fake_client_instance
+    monkeypatch.setattr(
+        "trading_lib.strategy_combiner.strategy_combiner.OrderManagerClient",
+        fake_client_cls,
+    )
+
+    fake_feed_cls = MagicMock()
+    fake_feed_instance = MagicMock()
+    fake_feed_cls.return_value = fake_feed_instance
+    monkeypatch.setattr(
+        "trading_lib.strategy_combiner.strategy_combiner.FeedHandler",
+        fake_feed_cls,
+    )
+
+    price_strategy = MovingAverageStrategy(short_window=3, long_window=5, quantity=10)
+    news_strategy = NewsBasedStrategy()
+
+    config = {
+        "host": "localhost",
+        "md_port": 5000,
+        "news_port": 5001,
+        "order_manager_port": 6000,
+    }
+
+    combiner = StrategyCombiner(
+        price_strategy=price_strategy,
+        news_strategy=news_strategy,
+        config=config,
+    )
+
+    fake_client_cls.assert_called_once_with("localhost", 6000)
+    fake_client_instance.connect.assert_called_once()
+
+    assert combiner._trade_signal_listener is not None
+
+
+def test_generate_trade_signal_calls_client_place_order(monkeypatch):
+    fake_client_cls = MagicMock()
+    fake_client_instance = MagicMock()
+    fake_client_cls.return_value = fake_client_instance
+    monkeypatch.setattr(
+        "trading_lib.strategy_combiner.strategy_combiner.OrderManagerClient",
+        fake_client_cls,
+    )
+
+    fake_feed_cls = MagicMock()
+    fake_feed_instance = MagicMock()
+    fake_feed_cls.return_value = fake_feed_instance
+    monkeypatch.setattr(
+        "trading_lib.strategy_combiner.strategy_combiner.FeedHandler",
+        fake_feed_cls,
+    )
+
+    price_strategy = MovingAverageStrategy(short_window=3, long_window=5, quantity=10)
+    news_strategy = NewsBasedStrategy()
+
+    config = {
+        "host": "localhost",
+        "md_port": 5000,
+        "news_port": 5001,
+        "order_manager_port": 6000,
+    }
+
+    combiner = StrategyCombiner(
+        price_strategy=price_strategy,
+        news_strategy=news_strategy,
+        config=config,
+    )
+
+    ticker = "AAPL"
+    price = 110.0
+    quantity = 10
+    action = Action.BUY
+
+    combiner._latest_price_signal[ticker] = (quantity, price, action)
+    combiner._latest_news_signal[ticker] = action
+
+    combiner.generate_trade_signal(ticker)
+
+    fake_client_instance.place_order.assert_called_once_with(
+        ticker, action, quantity, price
+    )
