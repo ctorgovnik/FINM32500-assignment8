@@ -27,6 +27,11 @@ class StrategyCombiner:
 
         self._trade_signal_listener = None
 
+        # TODO: Initialize feedhandler (see orderbook)
+        # TODO: Add ourselves as news listener
+        # TODO: implement shutdown method (close any connections / resources)
+        # TODO: implement news listener method
+
     def set_trade_signal_listener(self, callback: Callable[[str, int, float, Action], None]):
         """Subscribe to order status updates.
 
@@ -36,6 +41,7 @@ class StrategyCombiner:
         self._trade_signal_listener = callback
 
     def news_listener(self):
+        # TODO: Take serilized str, parse into ticker and news_sentiment and call got_new_news
         pass
 
     def price_listener(self):
@@ -47,24 +53,24 @@ class StrategyCombiner:
     def got_new_news(self, ticker: str, news_sentiment: int):
         symbol, action = self.news_strategy.generate_signal(ticker = ticker, news_sentiment = news_sentiment)
         self._latest_news_signal[symbol] = action
-        return self.generate_trade_signal(ticker)
+        self.generate_trade_signal(ticker)
 
-    def got_new_price(self, tick: MarketDataPoint) -> Optional[Action]:
+    def got_new_price(self, tick: MarketDataPoint):
         signals = self.price_strategy.generate_signals(tick = tick)
 
         if len(signals) == 0:
-            return None
+            return
 
         ticker, price, quantity, action = signals[0]
         self._latest_price_signal[ticker] = (price, quantity, action)
 
-        return self.generate_trade_signal(ticker)
+        self.generate_trade_signal(ticker)
 
-    def generate_trade_signal(self, ticker: str) -> Optional[Action]:
+    def generate_trade_signal(self, ticker: str):
         if ticker not in self._latest_news_signal:
-            return None
+            return
         if ticker not in self._latest_price_signal:
-            return None
+            return
 
         latest_price_signal = self._latest_price_signal[ticker]
         news_action = self._latest_news_signal[ticker]
@@ -74,7 +80,7 @@ class StrategyCombiner:
         if news_action == price_action:
             self._trade_signal_listener(ticker, quantity, price, price_action)
 
-        return None
+        return
 
 
 
