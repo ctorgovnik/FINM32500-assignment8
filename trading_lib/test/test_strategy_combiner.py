@@ -1,7 +1,29 @@
+import pytest
+
 from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
 from trading_lib.strategy.price_based_strategy import MovingAverageStrategy
 from trading_lib.strategy_combiner.strategy_combiner import StrategyCombiner
 from trading_lib.models import MarketDataPoint, Action, OrderStatus, Order
+
+def test_news_deserialization():
+    strategy_combiner = StrategyCombiner(
+        price_strategy=MovingAverageStrategy(short_window=3, long_window=5, quantity=10),
+        news_strategy=NewsBasedStrategy())
+    ticker, sentiment = strategy_combiner.deserialize_news_data(b"MSFT,25*")
+    assert ticker == "MSFT"
+    assert sentiment == 25
+
+    with pytest.raises(ValueError):
+        ticker, sentiment = strategy_combiner.deserialize_news_data(b"Hi*")
+
+    with pytest.raises(ValueError):
+        ticker, sentiment = strategy_combiner.deserialize_news_data(b"Hi,Bye*")
+
+    with pytest.raises(ValueError):
+        ticker, sentiment = strategy_combiner.deserialize_news_data(b"ABCD,1000*")
+
+    with pytest.raises(ValueError):
+        ticker, sentiment = strategy_combiner.deserialize_news_data(b"ABCD,-1*")
 
 def test_buy_buy(generate_buy_ticks):
     callback_got_called = False

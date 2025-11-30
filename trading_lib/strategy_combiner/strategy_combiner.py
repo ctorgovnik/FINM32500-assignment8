@@ -1,36 +1,28 @@
-# Reads latest prices from shared memory
-# connects to gateway news stream to receive sentiment - needs ticker and sentiment
-# generates trading signals buy if both buy, sell if both sell, hold otherwise
-# Sends an Order message to the OrderManager when a trade is decided.
-    # Manage current position (none, long, short) to avoid duplicate orders
-    # Serialize orders before sending (JSON, pickle)
-    # Respect MESSAGE_DELIMITER in all transmissions
-# Price based strategy returns list of signals, news_based strategy returns a signal
-# connect to gateway
-from pkg_resources import non_empty_lines
-
 from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
 from trading_lib.strategy.price_based_strategy import  MovingAverageStrategy
 from trading_lib.models import Action, MarketDataPoint, Order
 from trading_lib.strategy.base import Strategy
-from OrderManager.client import OrderManagerClient
+from OrderBook.feed_handler import FeedHandler
+from logger import setup_logger
 
 from typing import Optional, Callable
-import config
 
 class StrategyCombiner:
-    def __init__(self, price_strategy: Strategy, news_strategy: NewsBasedStrategy):
+    def __init__(self, price_strategy: MovingAverageStrategy, news_strategy: NewsBasedStrategy, config=None):
         self.price_strategy = price_strategy
         self.news_strategy = news_strategy
         self._latest_price_signal: dict[str, tuple[float, int, Action]] = {}
         self._latest_news_signal: dict[str, Action] = {}
-
         self._trade_signal_listener = None
 
-        # TODO: Initialize feedhandler (see orderbook)
-        # TODO: Add ourselves as news listener
-        # TODO: implement shutdown method (close any connections / resources)
-        # TODO: implement news listener method
+        self.logger = setup_logger("StrategyCombiner")
+
+        if config is not None:
+            self.feed_handler = FeedHandler(config["host"], config["md_port"], config["news_port"])
+            self.feed_handler.subscribe(self.news_listener, "news_listener")
+
+    def shutdown(self):
+        self.feed_handler.shutdown()
 
     def set_trade_signal_listener(self, callback: Callable[[str, int, float, Action], None]):
         """Subscribe to order status updates.
@@ -40,9 +32,31 @@ class StrategyCombiner:
         """
         self._trade_signal_listener = callback
 
-    def news_listener(self):
-        # TODO: Take serilized str, parse into ticker and news_sentiment and call got_new_news
-        pass
+    def deserialize_news_data(self, data: bytes) -> tuple[str, int]:
+        message = data.decode('utf-8').rstrip('*').strip()
+        parts = message.split(',')
+        if len(parts) != 2:
+            raise ValueError(f"Malformed market data (expected 2 fields, got {len(parts)}): '{message}'")
+
+        ticker = parts[0].strip()
+        try:
+            sentiment = int(parts[1].strip())
+        except ValueError as e:
+            raise ValueError(f"Invalid sentiment '{parts[1]}' in message: '{message}'")
+
+        if not 0 <= sentiment <= 100:
+            raise ValueError(f"Expected sentiment between 0 and 100, actual value: '{parts[1]}' in message: '{message}'")
+
+        return ticker, sentiment
+
+    def news_listener(self, data: bytes):
+        try:
+            ticker, sentiment = self.deserialize_news_data(data)
+        except ValueError as e:
+            self.logger.error(e)
+            return
+
+        self.got_new_news(ticker, sentiment)
 
     def price_listener(self):
         pass

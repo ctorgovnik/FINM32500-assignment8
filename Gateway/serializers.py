@@ -10,9 +10,9 @@ class MessageSerializer:
         message = f"{symbol},{price},{timestamp}"
         return message.encode('utf-8')
     
-    def serialize_sentiment(self, sentiment: int) -> bytes:
+    def serialize_sentiment(self, symbol: str, sentiment: int) -> bytes:
         """Serialize sentiment: SENTIMENT"""
-        message = str(sentiment)
+        message = f"{symbol},{str(sentiment)}"
         return message.encode('utf-8')
     
     def add_delimiter(self, data: bytes) -> bytes:

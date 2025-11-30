@@ -9,8 +9,8 @@ def test_serialize_price():
 
 def test_serialize_sentiment():
     serializer = MessageSerializer()
-    result = serializer.serialize_sentiment(75)
-    assert result == b"75"
+    result = serializer.serialize_sentiment("APPL",75)
+    assert result == b"APPL,75"
 
 def test_add_delimiter():
     serializer = MessageSerializer()
