@@ -20,6 +20,8 @@ class StrategyCombiner:
         if config is not None:
             self.feed_handler = FeedHandler(config["host"], config["md_port"], config["news_port"])
             self.feed_handler.subscribe(self.news_listener, "news_listener")
+            # TODO: Configure OrderManagerClient
+            # TODO: add trade_signal_listener which calls placeorder on client
 
     def shutdown(self):
         self.feed_handler.shutdown()

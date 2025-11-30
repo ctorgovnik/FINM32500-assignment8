@@ -245,9 +245,9 @@ Logs are written to `logs/` directory:
 ## TODO
 
 - [ ] Implement Strategy process
-  - [ ] Moving average crossover logic
-  - [ ] News-based signal logic
-  - [ ] Combined signal logic
+  - [x] Moving average crossover logic
+  - [x] News-based signal logic
+  - [x] Combined signal logic
   - [ ] Order generation
 - [ ] Performance benchmarking
 - [ ] Additional unit tests
