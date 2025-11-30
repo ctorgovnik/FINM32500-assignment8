@@ -23,9 +23,9 @@ class StrategyCombiner:
             self.feed_handler.subscribe(self.news_listener, "news_listener")
             self.client = OrderManagerClient(config["host"], config["order_manager_port"])
             self.client.connect()
-            self.set_trade_signal_listener(self._default_trade_signal_listener)
+            self.set_trade_signal_listener(self._publish_order_to_order_manager)
 
-    def _default_trade_signal_listener(self, symbol: str, quantity: int, price: float, action: Action):
+    def _publish_order_to_order_manager(self, symbol: str, quantity: int, price: float, action: Action):
         """ Default callback to send order to OrderManagerClient"""
         try:
             self.client.place_order(symbol, action, quantity, price)
@@ -69,12 +69,6 @@ class StrategyCombiner:
             return
 
         self.got_new_news(ticker, sentiment)
-
-    def price_listener(self):
-        pass
-
-    def publish_signal(self):
-        pass
 
     def got_new_news(self, ticker: str, news_sentiment: int):
         symbol, action = self.news_strategy.generate_signal(ticker = ticker, news_sentiment = news_sentiment)
