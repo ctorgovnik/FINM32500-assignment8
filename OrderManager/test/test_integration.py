@@ -12,7 +12,7 @@ def server():
     """Create and start server on unique port"""
     config = {
         "host": "localhost",
-        "port": 9300,  # Use different port to avoid conflicts
+        "order_manager_port": 9300,  # Use different port to avoid conflicts
         "delimiter": b'*'
     }
     

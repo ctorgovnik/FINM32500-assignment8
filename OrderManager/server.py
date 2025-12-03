@@ -13,11 +13,30 @@ class Server:
 
         self.logger.info(f"Server attempting to listen on {self.host}:{self.port}")
 
-        # Create server socket
+        # Create server socket with SO_REUSEADDR to allow port reuse
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # Bind server socket to host and port
-        self.server_socket.bind((self.host, self.port))
+        try:
+            self.server_socket.bind((self.host, self.port))
+        except OSError as e:
+            if e.errno == 48:  # Address already in use
+                self.logger.warning(f"Port {self.port} is already in use. Attempting to clean up...")
+                # Try to connect to see if something is actually using it
+                try:
+                    test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    test_socket.connect((self.host, self.port))
+                    test_socket.close()
+                    self.logger.error(f"Port {self.port} is actively in use by another process")
+                    raise
+                except (ConnectionRefusedError, OSError):
+                    # Port is bound but not accepting connections - wait a bit and retry
+                    import time
+                    time.sleep(0.5)
+                    self.server_socket.bind((self.host, self.port))
+            else:
+                raise
 
         # Start listening for clients
         self.server_socket.listen(5)
@@ -33,14 +52,22 @@ class Server:
 
     def accept_clients(self):
         while self.running:
-            client_socket, addr = self.server_socket.accept()
-            with self.lock:
-                self.clients.append(client_socket)
-            threading.Thread(
-                target=self.handle_client,
-                args=(client_socket, addr), 
-                daemon=True
-            ).start()
+            try:
+                self.server_socket.settimeout(1.0)  # Allow periodic check of self.running
+                client_socket, addr = self.server_socket.accept()
+                with self.lock:
+                    self.clients.append(client_socket)
+                threading.Thread(
+                    target=self.handle_client,
+                    args=(client_socket, addr), 
+                    daemon=True
+                ).start()
+            except socket.timeout:
+                continue  # Check self.running again
+            except (OSError, socket.error) as e:
+                if self.running:
+                    self.logger.error(f"Error accepting client: {e}")
+                break
 
     def handle_client(self, client_socket: socket.socket, addr: tuple):
         """Handle client connection"""
@@ -76,7 +103,41 @@ class Server:
             self.logger.error(f"Error executing order: {e}")
     
     def shutdown(self):
-        """Shutdown the server"""
+        """Shutdown the server and clean up all resources"""
+        if not self.running:
+            return  # Already shut down
+        
         self.running = False
-        self.server_socket.close()
-        self.logger.info("Server shutdown")
+        self.logger.info("Shutting down server...")
+        
+        # Close server socket first to stop accepting new connections
+        if self.server_socket:
+            try:
+                self.server_socket.shutdown(socket.SHUT_RDWR)
+            except (OSError, socket.error):
+                pass  # Socket might already be closed
+            
+            try:
+                self.server_socket.close()
+            except Exception as e:
+                self.logger.warning(f"Error closing server socket: {e}")
+            finally:
+                self.server_socket = None
+        
+        # Close all client connections
+        with self.lock:
+            client_count = len(self.clients)
+            for client in self.clients:
+                try:
+                    client.shutdown(socket.SHUT_RDWR)
+                except (OSError, socket.error):
+                    pass
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            self.clients.clear()
+            if client_count > 0:
+                self.logger.info(f"Closed {client_count} client connection(s)")
+        
+        self.logger.info("Server shutdown complete")

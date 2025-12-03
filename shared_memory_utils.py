@@ -12,6 +12,7 @@ class SharedPriceBook:
         self.name = name
         self.num_symbols = len(symbols)
         self.lock = Lock()
+        self._create = create  # Store for cleanup
 
         self.dtype = np.dtype(
             [
@@ -24,11 +25,29 @@ class SharedPriceBook:
         self.size = self.num_symbols * self.dtype.itemsize
 
         if create:
-            self.shm = shared_memory.SharedMemory(
-                create=True, 
-                size=self.size,
-                name=name or 'price_book'
-            )
+            # Try to create, but if it already exists, unlink and recreate
+            try:
+                self.shm = shared_memory.SharedMemory(
+                    create=True, 
+                    size=self.size,
+                    name=name or 'price_book'
+                )
+            except FileExistsError:
+                # Shared memory exists from previous run - clean it up and recreate
+                self.logger.warning(f"Shared memory '{name or 'price_book'}' already exists. Cleaning up...")
+                try:
+                    old_shm = shared_memory.SharedMemory(name=name or 'price_book', create=False)
+                    old_shm.close()
+                    old_shm.unlink()
+                except Exception as e:
+                    self.logger.warning(f"Error cleaning up old shared memory: {e}")
+                
+                # Now create fresh
+                self.shm = shared_memory.SharedMemory(
+                    create=True, 
+                    size=self.size,
+                    name=name or 'price_book'
+                )
 
             self.prices = np.ndarray(
                 shape=(self.num_symbols,),
@@ -92,7 +111,7 @@ class SharedPriceBook:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-        if self.create:
+        if self._create:
             self.unlink()
         return False
     

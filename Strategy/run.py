@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import logging
 import signal
 import sys
@@ -30,7 +30,7 @@ def run_strategy(config: dict):
         # Setup signal handlers
         configure_signal_handlers(logger)
 
-        last_query_time = datetime.min
+        last_query_time = 0.0  # Use timestamp 0.0 instead of datetime.min
 
         # Keep alive
         while True:
@@ -57,11 +57,33 @@ def configure_signal_handlers(logger: logging.Logger):
 
 
 def configure_shared_price_book(config: dict, symbols):
-    return SharedPriceBook(
-        symbols,
-        name=config.get("shared_memory_name", "order_book"),
-        create=True
-    )
+    # Strategy attaches to existing shared memory created by OrderBook
+    # Retry in case OrderBook hasn't created it yet
+    max_retries = 10
+    retry_delay = 0.5
+    logger = setup_logger("strategy")
+    
+    for attempt in range(max_retries):
+        try:
+            return SharedPriceBook(
+                symbols,
+                name=config.get("shared_memory_name", "order_book"),
+                create=False
+            )
+        except FileNotFoundError:
+            if attempt < max_retries - 1:
+                logger.warning(f"Shared memory not found (attempt {attempt + 1}/{max_retries}). Waiting for OrderBook...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"Shared memory not found after {max_retries} attempts. OrderBook may not be running.")
+                raise
+        except FileExistsError:
+            # This shouldn't happen with create=False, but handle it just in case
+            logger.warning("Shared memory exists but attach failed. Retrying...")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                raise
 
 def configure_strategy(config: dict) -> StrategyCombiner:
     return StrategyCombiner(

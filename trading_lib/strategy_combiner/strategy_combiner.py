@@ -20,10 +20,31 @@ class StrategyCombiner:
 
         if config is not None:
             self.feed_handler = FeedHandler(config["host"], config["md_port"], config["news_port"])
-            self.feed_handler.subscribe(self.news_listener, "news_listener")
+            self.feed_handler.subscribe(self.news_listener, "news")
+            self.feed_handler.run()  # Start listening to feeds
             self.client = OrderManagerClient(config["host"], config["order_manager_port"])
-            self.client.connect()
+            # Retry connection to OrderManager (it may not be ready yet)
+            self._connect_to_order_manager()
             self.set_trade_signal_listener(self._publish_order_to_order_manager)
+    
+    def _connect_to_order_manager(self, max_retries=10, retry_delay=0.5):
+        """Retry connection to OrderManager with retry logic"""
+        import time
+        for attempt in range(max_retries):
+            try:
+                if self.client.connect():
+                    self.logger.info("Successfully connected to OrderManager")
+                    return True
+            except Exception as e:
+                pass  # connect() already logs the error
+            
+            if attempt < max_retries - 1:
+                self.logger.warning(f"Retrying connection to OrderManager (attempt {attempt + 1}/{max_retries})...")
+                time.sleep(retry_delay)
+            else:
+                self.logger.error(f"Failed to connect to OrderManager after {max_retries} attempts. Orders will not be sent.")
+                return False
+        return False
 
     def _publish_order_to_order_manager(self, symbol: str, quantity: int, price: float, action: Action):
         """ Default callback to send order to OrderManagerClient"""
