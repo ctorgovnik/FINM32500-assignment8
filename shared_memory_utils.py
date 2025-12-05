@@ -106,6 +106,10 @@ class SharedPriceBook:
                 for i in range(self.num_symbols)
             }
     
+    def shared_memory_size(self) -> int:
+        """Returns size of shared memory in bytes"""
+        return self.shm.size
+
     def __enter__(self):
         return self
     

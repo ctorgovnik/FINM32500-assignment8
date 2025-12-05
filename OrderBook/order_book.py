@@ -79,6 +79,7 @@ class OrderBook:
         self.feed_handler.run()
 
     def shutdown(self):
+        self.logger.info(f"Shared memory size: {self.shared_price_book.shared_memory_size()}")
         self.feed_handler.shutdown()
     
         
