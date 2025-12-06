@@ -5,13 +5,13 @@ import sys
 import os
 import time
 
-from trading_lib.models import MarketDataPoint
-from trading_lib.strategy.price_based_strategy import MovingAverageStrategy
-from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
-
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
+
+from trading_lib.models import MarketDataPoint
+from trading_lib.strategy.price_based_strategy import MovingAverageStrategy
+from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
 
 from logger import setup_logger
 from trading_lib.strategy_combiner.strategy_combiner import StrategyCombiner
@@ -30,17 +30,19 @@ def run_strategy(config: dict):
         # Setup signal handlers
         configure_signal_handlers(logger)
 
-        last_query_time = 0.0  # Use timestamp 0.0 instead of datetime.min
-
+        last_timestamps = {s: 0.0 for s in symbols}
         # Keep alive
         while True:
             time.sleep(1)
-            current_query_time = time.time()
             for symbol in symbols:
                 price, timestamp = shared_price_book.read(symbol)
-                if last_query_time < timestamp <= current_query_time:
+                if price is None or timestamp is None:
+                    continue
+                if timestamp > last_timestamps[symbol]:
+                    logger.info(
+                        f"New price for {symbol}: {price} (ts={timestamp}, prev_ts={last_timestamps[symbol]})"
+                    )
                     strategy.got_new_price(MarketDataPoint(timestamp = timestamp, symbol = symbol, price = price))
-            last_query_time = current_query_time
 
     except Exception as e:
         logger.error(f"Strategy error: {e}", exc_info=True)
@@ -94,11 +96,12 @@ def configure_strategy(config: dict) -> StrategyCombiner:
 if __name__ == "__main__":
     config = {
         "host": "localhost",
+        "md_port": 8002,
         "news_port": 8001,
-        "symbols": ["AAPL", "MSFT", "GOOG"],
+        "symbols": ["AAPL", "MSFT", "GOOG", "SPY"],
         "shared_memory_name": "market_prices",
         "order_manager_host": "localhost",
-        "order_manager_port": 9000,
+        "order_manager_port": 8500,
         "short_window": 5,
         "long_window": 20,
         "bullish_threshold": 60,

@@ -3,7 +3,7 @@
     
     "Gateway": {
         "host": "localhost",
-        "md_port": 8000,
+        "md_port": 8002,
         "news_port": 8001,
         "delimiter": "*",
         "data_path": "data/market_data-1.csv"
@@ -11,7 +11,7 @@
     
     "OrderBook": {
         "host": "localhost",
-        "md_port": 8000,
+        "md_port": 8002,
         "news_port": 8001,
         "symbols": ["AAPL", "MSFT", "SPY"],
         "shared_memory_name": "market_prices"
@@ -19,11 +19,12 @@
     
     "Strategy": {
         "host": "localhost",
+        "md_port": 8002,
         "news_port": 8001,
         "symbols": ["AAPL", "MSFT", "SPY"],
         "shared_memory_name": "market_prices",
         "order_manager_host": "localhost",
-        "order_manager_port": 9000,
+        "order_manager_port": 8500,
         "short_window": 5,
         "long_window": 20,
         "bullish_threshold": 60,

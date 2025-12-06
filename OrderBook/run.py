@@ -21,7 +21,7 @@ def run_orderbook(config: dict):
         
         # Setup signal handlers
         def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, shutting down...")
+            logger.info(f"[ORDERBOOK] Received signal {signum}, shutting down...")
             try:
                 order_book.shutdown()
             except:
@@ -55,9 +55,9 @@ if __name__ == "__main__":
     
     config = {
         "host": "localhost",
-        "md_port": 8000,
+        "md_port": 8002,
         "news_port": 8001,
-        "symbols": ["AAPL", "MSFT", "GOOG"],
+        "symbols": ["AAPL", "MSFT", "GOOG", "SPY"],
         "shared_memory_name": "market_prices"
     }
     

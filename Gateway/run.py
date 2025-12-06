@@ -56,7 +56,7 @@ def run_gateway(config: dict):
 if __name__ == "__main__":
     run_gateway({
         "data_path": "data/market_data.csv",
-        "md_port": 8000,
+        "md_port": 8002,
         "news_port": 8001,
         "delimiter": b'*',
         "symbols": ["AAPL", "MSFT", "SPY"]

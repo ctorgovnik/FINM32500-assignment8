@@ -108,7 +108,7 @@ Edit `config.json` to configure the system:
         "host": "localhost",
         "md_port": 8000,
         "news_port": 8001,
-        "data_path": "data/market_data-1.csv"
+        "data_path": "data/market_data.csv"
     },
     
     "OrderBook": {
