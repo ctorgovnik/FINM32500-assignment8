@@ -104,8 +104,7 @@ class StrategyCombiner:
             return
 
         ticker, quantity, price, action = signals[0]
-        tick_id = f"{float(tick.timestamp):.6f}"
-        self._latest_price_signal[ticker] = (quantity, price, action, tick_id)
+        self._latest_price_signal[ticker] = (quantity, price, action, tick.timestamp)
 
         self.generate_trade_signal(ticker)
 
@@ -118,14 +117,14 @@ class StrategyCombiner:
         latest_price_signal = self._latest_price_signal[ticker]
         news_action = self._latest_news_signal[ticker]
 
-        quantity, price, price_action, tick_id = latest_price_signal
+        quantity, price, price_action, tick_timestamp = latest_price_signal
 
         if news_action == price_action:
             log_performance_event(
                 component="Strategy",
                 event="trade_decision",
                 symbol=ticker,
-                tick_id=tick_id,
+                tick_id=str(tick_timestamp),
             )
             self._trade_signal_listener(ticker, quantity, price, price_action)
 
