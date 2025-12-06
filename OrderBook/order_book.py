@@ -3,6 +3,7 @@ from datetime import datetime
 
 from OrderBook.feed_handler import FeedHandler
 from logger import setup_logger
+from performance import log_performance_event
 from shared_memory_utils import SharedPriceBook
 
 class OrderBook:
@@ -79,7 +80,9 @@ class OrderBook:
         self.feed_handler.run()
 
     def shutdown(self):
-        self.logger.info(f"Shared memory size: {self.shared_price_book.shared_memory_size()}")
+        memory = self.shared_price_book.shared_memory_size()
+        self.logger.info(f"Shared memory size: {memory}")
+        log_performance_event(component="OrderBook", event="shared_memory_size", memory_bytes=memory)
         self.feed_handler.shutdown()
     
         

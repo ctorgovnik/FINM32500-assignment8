@@ -27,6 +27,7 @@ from OrderBook.run import run_orderbook
 from Strategy.run import run_strategy
 from OrderManager.run import run_order_manager
 from logger import setup_logger
+from performance import write_performance_report
 
 
 def main():
@@ -84,6 +85,9 @@ def main():
             
             logger.info("Shutdown complete")
             print("Stopped")
+
+            write_performance_report()
+
             sys.exit(0)
         
         signal.signal(signal.SIGINT, signal_handler)

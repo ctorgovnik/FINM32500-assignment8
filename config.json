@@ -6,7 +6,7 @@
         "md_port": 8002,
         "news_port": 8001,
         "delimiter": "*",
-        "data_path": "data/market_data-1.csv"
+        "data_path": "data/market_data.csv"
     },
     
     "OrderBook": {
@@ -33,6 +33,6 @@
     
     "OrderManager": {
         "host": "localhost",
-        "port": 9000
+        "port": 8500
     }
 }

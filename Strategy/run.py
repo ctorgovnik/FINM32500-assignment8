@@ -39,9 +39,6 @@ def run_strategy(config: dict):
                 if price is None or timestamp is None:
                     continue
                 if timestamp > last_timestamps[symbol]:
-                    logger.info(
-                        f"New price for {symbol}: {price} (ts={timestamp}, prev_ts={last_timestamps[symbol]})"
-                    )
                     strategy.got_new_price(MarketDataPoint(timestamp = timestamp, symbol = symbol, price = price))
 
     except Exception as e:
