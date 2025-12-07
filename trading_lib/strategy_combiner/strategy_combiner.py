@@ -127,13 +127,14 @@ class StrategyCombiner:
         if news_action == price_action:
             decision_time = time.time()
             arrival_time = self._tick_arrival_time.get(ticker)
-            latency_ms = (decision_time - arrival_time) * 1000
-            log_performance_event(
-                component="Strategy",
-                event="latency",
-                symbol=ticker,
-                duration_ms=latency_ms
-            )
+            if arrival_time is not None:
+                latency_ms = (decision_time - arrival_time) * 1000
+                log_performance_event(
+                    component="Strategy",
+                    event="latency",
+                    symbol=ticker,
+                    duration_ms=latency_ms
+                )
             self._trade_signal_listener(ticker, quantity, price, price_action)
 
         return
