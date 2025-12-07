@@ -7,6 +7,8 @@ from logger import setup_logger
 from OrderManager.client import OrderManagerClient
 from trading_lib.models import Action
 from typing import Optional, Callable
+import time
+from performance import log_performance_event
 
 class StrategyCombiner:
     def __init__(self, price_strategy: MovingAverageStrategy, news_strategy: NewsBasedStrategy, config=None):
@@ -15,6 +17,7 @@ class StrategyCombiner:
         self._latest_price_signal: dict[str, tuple[int, float, Action]] = {}
         self._latest_news_signal: dict[str, Action] = {}
         self._trade_signal_listener = None
+        self._tick_arrival_time: dict[str, float] = {}
 
         self.logger = setup_logger("StrategyCombiner")
 
@@ -103,11 +106,14 @@ class StrategyCombiner:
             return
 
         ticker, quantity, price, action = signals[0]
+        self._tick_arrival_time[tick.symbol] = time.time()
+
         self._latest_price_signal[ticker] = (quantity, price, action)
 
         self.generate_trade_signal(ticker)
 
     def generate_trade_signal(self, ticker: str):
+
         if ticker not in self._latest_news_signal:
             return
         if ticker not in self._latest_price_signal:
@@ -119,6 +125,15 @@ class StrategyCombiner:
         quantity, price, price_action = latest_price_signal
 
         if news_action == price_action:
+            decision_time = time.time()
+            arrival_time = self._tick_arrival_time.get(ticker)
+            latency_ms = (decision_time - arrival_time) * 1000
+            log_performance_event(
+                component="Strategy",
+                event="latency",
+                symbol=ticker,
+                duration_ms=latency_ms
+            )
             self._trade_signal_listener(ticker, quantity, price, price_action)
 
         return

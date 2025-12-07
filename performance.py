@@ -76,66 +76,39 @@ import csv
 
 def calculate_average_latency(perf_log_path: Path = PERF_LOG_PATH) -> float | None:
     """
-    Compute average latency (ms) between:
-      - Gateway: price_tick_emitted
-      - Strategy: trade_decision
+    Compute average latency (ms) using pre-computed latency samples.
 
-    Matching rule (per symbol):
-      For each trade_decision, use the most recent price_tick_emitted
-      *for the same symbol* with tick_ts <= decision_ts.
+    Returns:
+        Average latency in ms, or None if no samples are found.
     """
     if not perf_log_path.exists():
         return None
 
-    tick_times_by_symbol: dict[str, list[float]] = {}
-    decision_times_by_symbol: dict[str, list[float]] = {}
+    latencies_ms: list[float] = []
 
     with perf_log_path.open("r", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            try:
-                ts = float(row["timestamp"])
-            except (KeyError, ValueError):
+            # Only look at latency events
+            if row.get("event") != "latency":
                 continue
 
-            component = row.get("component", "")
-            event = row.get("event", "")
-            symbol = row.get("symbol", "")
+            duration_str = row.get("duration_ms", "")
+            if not duration_str:
+                continue
 
-            if component == "Gateway" and event == "price_tick_emitted":
-                tick_times_by_symbol.setdefault(symbol, []).append(ts)
+            try:
+                lat = float(duration_str)
+            except ValueError:
+                continue
 
-            elif component == "Strategy" and event == "trade_decision":
-                decision_times_by_symbol.setdefault(symbol, []).append(ts)
-
-    for sym in tick_times_by_symbol:
-        tick_times_by_symbol[sym].sort()
-    for sym in decision_times_by_symbol:
-        decision_times_by_symbol[sym].sort()
-
-    latencies_ms: list[float] = []
-
-    for symbol, decisions in decision_times_by_symbol.items():
-        ticks = tick_times_by_symbol.get(symbol, [])
-        if not ticks:
-            continue
-
-        i = 0
-        n_ticks = len(ticks)
-
-        for decision_ts in decisions:
-            while i + 1 < n_ticks and ticks[i + 1] <= decision_ts:
-                i += 1
-            if ticks[i] <= decision_ts:
-                latency_ms = (decision_ts - ticks[i]) * 1000.0
-                latencies_ms.append(latency_ms)
-
-    print(f"DEBUG: matched {len(latencies_ms)} tick+decision pairs")
+            latencies_ms.append(lat)
 
     if not latencies_ms:
         return None
 
     return sum(latencies_ms) / len(latencies_ms)
+
 
 def read_shared_memory_size(perf_log_path: Path = PERF_LOG_PATH) -> int | None:
 
@@ -147,6 +120,75 @@ def read_shared_memory_size(perf_log_path: Path = PERF_LOG_PATH) -> int | None:
 
     return None
 
+def calculate_throughput(perf_log_path: Path = PERF_LOG_PATH) -> float | None:
+    """
+    Compute throughput in ticks per second, based on Gateway price_tick_emitted events.
+
+    Throughput = (number_of_ticks - 1) / (last_tick_ts - first_tick_ts)
+
+    Returns:
+        ticks per second as float, or None if not enough data.
+    """
+    if not perf_log_path.exists():
+        return None
+
+    tick_timestamps: list[float] = []
+
+    with perf_log_path.open("r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row.get("component") == "Gateway" and row.get("event") == "price_tick_emitted":
+                try:
+                    ts = float(row["timestamp"])
+                except (KeyError, ValueError):
+                    continue
+                tick_timestamps.append(ts)
+
+    if len(tick_timestamps) < 2:
+        return None
+
+    tick_timestamps.sort()
+    first_ts = tick_timestamps[0]
+    last_ts = tick_timestamps[-1]
+    elapsed = last_ts - first_ts
+
+    if elapsed <= 0:
+        return None
+
+    return (len(tick_timestamps) - 1) / elapsed
+
+def calculate_resilience_stats(perf_log_path: Path = PERF_LOG_PATH) -> dict[str, int]:
+    """
+    Summarize behavior under dropped connections / missing data.
+
+    Returns a dict with counts:
+      - "client_disconnects"
+      - "missing_data"
+      - "stale_data"
+    """
+    stats = {
+        "client_disconnects": 0,
+        "missing_data": 0,
+        "stale_data": 0,
+    }
+
+    if not perf_log_path.exists():
+        return stats
+
+    with perf_log_path.open("r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            event = row.get("event", "")
+            component = row.get("component", "")
+
+            if component == "Gateway" and event == "client_disconnected":
+                stats["client_disconnects"] += 1
+            elif component == "Strategy" and event == "missing_data":
+                stats["missing_data"] += 1
+            elif component == "Strategy" and event == "stale_data":
+                stats["stale_data"] += 1
+
+    return stats
 
 def write_performance_report(
     perf_log_path: Path = PERF_LOG_PATH,
@@ -155,23 +197,54 @@ def write_performance_report(
 
     latency = calculate_average_latency(perf_log_path)
     shm = read_shared_memory_size(perf_log_path)
+    throughput = calculate_throughput(perf_log_path)
+    resilience = calculate_resilience_stats(perf_log_path)
 
     report = ["# Performance Report\n"]
 
+    # ---------------- Latency ----------------
     report.append("## Latency (Tick → Trade Decision)")
-    report.append(
-        f"- Average latency: **{latency:.2f} ms**" if latency is not None
-        else "- Average latency: **N/A (no matching tick+decision events)**"
-    )
+    if latency is not None:
+        report.append(f"- Average latency: **{latency:.2f} ms**")
+    else:
+        report.append("- Average latency: **N/A (no matching tick+decision events)**")
     report.append("")
 
+    # ---------------- Throughput ----------------
+    report.append("## Throughput (Ticks per Second)")
+    if throughput is not None:
+        report.append(f"- Average throughput: **{throughput:.2f} ticks/sec**")
+    else:
+        report.append("- Throughput: **N/A (not enough tick data)**")
+    report.append("")
+
+    # ---------------- Shared Memory ----------------
     report.append("## Shared Memory Footprint")
     if shm:
         report.append(f"- Shared memory size: **{shm} bytes** ({shm/1024:.2f} KB)")
     else:
         report.append("- Shared memory size: **Not Recorded**")
-    report.append("\n---\nGenerated from `performance.csv`\n")
+    report.append("")
+    report.append("---")
+    report.append("Generated from `performance.csv`\n")
+
+    # ---------- Dropped Connections / Missing Data ----------
+    report.append("## Behavior under Dropped Connections / Missing Data")
+    report.append(
+        f"- Gateway client disconnects: **{resilience['client_disconnects']}**"
+    )
+    report.append(
+        f"- Missing data reads (price/timestamp is None): **{resilience['missing_data']}**"
+    )
+    report.append(
+        f"- Stale data reads (timestamp did not advance): **{resilience['stale_data']}**"
+    )
+    report.append("")
+    report.append("---")
+    report.append("Generated from `performance.csv`\n")
 
     output_path.write_text("\n".join(report), encoding="utf-8")
-
     print(f"performance.md written → {output_path}")
+
+if __name__ == "__main__":
+    write_performance_report()

@@ -12,6 +12,7 @@ if parent_dir not in sys.path:
 from trading_lib.models import MarketDataPoint
 from trading_lib.strategy.price_based_strategy import MovingAverageStrategy
 from trading_lib.strategy.news_based_strategy import NewsBasedStrategy
+from performance import log_performance_event
 
 from logger import setup_logger
 from trading_lib.strategy_combiner.strategy_combiner import StrategyCombiner
@@ -37,9 +38,24 @@ def run_strategy(config: dict):
             for symbol in symbols:
                 price, timestamp = shared_price_book.read(symbol)
                 if price is None or timestamp is None:
+                    log_performance_event(
+                        component="Strategy",
+                        event="missing_data",
+                        symbol=symbol,
+                    )
+                    continue
+
+                if timestamp <= last_timestamps[symbol]:
+                    # We read but didn't advance in time (stale)
+                    log_performance_event(
+                        component="Strategy",
+                        event="stale_data",
+                        symbol=symbol,
+                    )
                     continue
                 if timestamp > last_timestamps[symbol]:
                     strategy.got_new_price(MarketDataPoint(timestamp = timestamp, symbol = symbol, price = price))
+                    last_timestamps[symbol] = timestamp
 
     except Exception as e:
         logger.error(f"Strategy error: {e}", exc_info=True)

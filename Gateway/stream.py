@@ -3,7 +3,7 @@ from typing import List, Optional
 import threading
 import logging
 import time
-
+from performance import log_performance_event
 from Gateway.providers.provider import Provider
 
 class Stream:
@@ -54,6 +54,11 @@ class Stream:
                 client.sendall(data)
             except Exception as e:
                 self.logger.warning(f"Error broadcasting data to client on port {self.port}: {e}")
+                log_performance_event(
+                    component="Gateway",
+                    event="client_disconnected",
+                    extra=f"port={self.port}"
+                )
                 dead_clients.append(client)
         
         # Remove dead clients
