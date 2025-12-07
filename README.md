@@ -34,9 +34,9 @@ Receives price data and maintains shared memory.
 - Provides atomic, lock-protected price updates
 
 ### 3. Strategy (`Strategy/`)
-**Status:** ⚠️ Placeholder
+**Status:** ✅ Complete
 
-Generates trading signals (TO BE IMPLEMENTED).
+Generates trading signals.
 
 Requirements:
 - Read prices from shared memory
@@ -160,7 +160,7 @@ Edit `config.json` to configure the system:
 │   ├── order_book.py
 │   └── test/
 │
-├── Strategy/                # Signal generator (PLACEHOLDER)
+├── Strategy/             
 │   ├── __init__.py
 │   └── run.py
 │
@@ -177,6 +177,8 @@ Edit `config.json` to configure the system:
 │   │   ├── base.py
 │   │   ├── price_based_strategy.py
 │   │   └── news_based_strategy.py
+│   ├── strategy_combiner/
+│   │   ├── strategy_combiner.py    # Generates signals
 │   └── test/
 │
 ├── examples/                # Usage examples
@@ -185,7 +187,12 @@ Edit `config.json` to configure the system:
 ├── data/
 │   └── market_data-1.csv
 │
-└── logs/                    # Log files
+├── logs/                    # Log files
+│
+└── performance.md  
+
+## Videos
+[watch/download videos]https://github.com/ctorgovnik/FINM32500-assignment8/releases/tag/submission-1
 ```
 
 ## Testing
@@ -244,14 +251,14 @@ Logs are written to `logs/` directory:
 
 ## TODO
 
-- [ ] Implement Strategy process
+- [x] Implement Strategy process
   - [x] Moving average crossover logic
   - [x] News-based signal logic
   - [x] Combined signal logic
   - [x] Order generation
-- [ ] Performance benchmarking
-- [ ] Additional unit tests
-- [ ] Performance report
+- [x] Performance benchmarking
+- [x] Additional unit tests
+- [x] Performance report
 
 ## Development
 
